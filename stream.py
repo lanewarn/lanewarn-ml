@@ -1,43 +1,17 @@
 import random
 import time
-from os import wait
-from pathlib import Path
-from time import sleep
 
-import cv2
 import torch
 from matplotlib import pyplot as plt
 
-from utils import torch_utils
-import os
-
-from utils.datasets import LoadWebcam, LoadImages
-from utils.parse_config import parse_data_cfg
+from models import Darknet, load_darknet_weights
+from utils.datasets import LoadWebcam
 from utils.utils import load_classes, non_max_suppression, scale_coords, plot_one_box
 from utils.video import bgr_to_rgb
-from models import ONNX_EXPORT, Darknet, load_darknet_weights
-import shutil
-
-
-def show(frame):
-    plt.imshow(frame)
-    plt.show()
-
-
-def capture(cap):
-    if not cap.isOpened(): raise Exception("Failed to open CV2")
-    _, n = cap.read()
-    return bgr_to_rgb(n)
 
 
 def detect(
-        cfg,
-        classes_file,
-        weights,
-        img_size=416,
-        conf_thres=0.5,
-        nms_thres=0.5
-):
+        cfg, classes_file, weights, img_size=320, conf_thres=0.6, nms_thres=0.5):
     model = Darknet(cfg, img_size)
 
     # Load weights
@@ -62,8 +36,9 @@ def detect(
         det = non_max_suppression(pred, conf_thres, nms_thres)[0]
 
         if det is not None and len(det) > 0:
-            det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
             detected_classes = []
+
+            det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
             for c in det[:, -1].unique():
                 n = (det[:, -1] == c).sum()
                 detected_classes.append({classes[int(c)]: int(n)})
@@ -81,4 +56,4 @@ def detect(
 
 
 if __name__ == '__main__':
-    detect('./ml-data/yolov3.cfg', './ml-data/classes.txt', './ml-data/weights/yolov3.weights', img_size=512)
+    detect('./ml-data/yolov3.cfg', './ml-data/classes.txt', './ml-data/weights/yolov3.weights')
