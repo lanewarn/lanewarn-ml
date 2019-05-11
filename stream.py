@@ -10,17 +10,13 @@ from utils.utils import load_classes, non_max_suppression, scale_coords, plot_on
 from utils.video import bgr_to_rgb
 
 
-def detect(
-        cfg, classes_file, weights, img_size=320, conf_thres=0.6, nms_thres=0.5):
+def detect(cfg, classes_file, weights, img_size=320, conf_thres=0.6, nms_thres=0.5):
     model = Darknet(cfg, img_size)
 
-    # Load weights
-    _ = load_darknet_weights(model, weights)
+    load_darknet_weights(model, weights)
 
-    # Fuse Conv2d + BatchNorm2d layers
     model.fuse()
 
-    # Eval mode
     model.to('cpu').eval()
 
     cap = LoadWebcam(img_size=img_size)
