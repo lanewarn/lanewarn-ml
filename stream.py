@@ -1,4 +1,6 @@
+import os
 import random
+import subprocess
 import time
 from argparse import ArgumentParser
 
@@ -75,6 +77,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     try:
+        print('+ Attempting to flash firmware')
+        subprocess.run('freenect-flashfirmware')
+
         stream('./ml-data/yolov3.cfg',
                './ml-data/classes.txt',
                './ml-data/weights/yolov3.weights',
