@@ -17,7 +17,7 @@ import socket
 from settings import RISKY_CLASSES, CAMERA_FOV
 
 
-def stream(cfg, classes_file, weights, socket_ip, socket_port, camera=0, image_size=128, confidence_threshold=0.6, nms_thres=0.5):
+def stream(cfg, classes_file, weights, socket_ip, socket_port, camera=0, image_size=128, confidence_threshold=0.6, nms_thres=0.5, max_fps=60):
     print('+ Initializing model')
     model = Darknet(cfg, image_size)
     print('+ Loading model')
@@ -27,7 +27,7 @@ def stream(cfg, classes_file, weights, socket_ip, socket_port, camera=0, image_s
     print('+ Loading model to CPU')
     model.to('cpu').eval()
     print('+ Loading webcam')
-    cap = LoadWebcam(img_size=image_size, camera=camera)
+    cap = LoadWebcam(img_size=image_size, camera=camera, max_fps=max_fps)
     print('+ Loading classes')
     classes = load_classes(classes_file)
     colors = [[random.randint(0, 255) for _ in range(3)] for _ in range(len(classes))]
@@ -39,13 +39,15 @@ def stream(cfg, classes_file, weights, socket_ip, socket_port, camera=0, image_s
     for i, (path, img, im0, vid_cap) in enumerate(cap):
         t = time.time()
 
+        print('+ Loading image to CPU')
         img = torch.from_numpy(img).unsqueeze(0).to('cpu')
         pred, _ = model(img)
+        print('+ Detecting objects')
         det = non_max_suppression(pred, confidence_threshold, nms_thres)[0]
 
         if det is not None and len(det) > 0:
             detected_classes = []
-
+            print('+ Rescaling model')
             det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
 
             for *coordinates, conf, cls_conf, cls in det:
@@ -65,6 +67,7 @@ def stream(cfg, classes_file, weights, socket_ip, socket_port, camera=0, image_s
         print('+ Cycle took %.3fs' % (time.time() - t))
         plt.imshow(bgr_to_rgb(im0))
         plt.show(block=False)
+        plt.pause(.001)
 
 
 if __name__ == '__main__':
@@ -73,6 +76,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--host', default='127.0.0.1', help='Sound module host')
     parser.add_argument('-q', '--quality', default=128, type=int, help='NN image size')
     parser.add_argument('-p', '--port', default=1337, type=int, help='Sound module port')
+    parser.add_argument('-f', '--fps', default=60, type=int, help='Camera max FPS')
 
     args = parser.parse_args()
 
@@ -86,6 +90,7 @@ if __name__ == '__main__':
                args.host,
                args.port,
                camera=args.camera,
-               image_size=args.quality)
+               image_size=args.quality,
+               max_fps=args.fps)
     except KeyboardInterrupt:
         if sock: sock.close()

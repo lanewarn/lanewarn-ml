@@ -94,9 +94,11 @@ class LoadImages:  # for inference
 
 
 class LoadWebcam:  # for inference
-    def __init__(self, img_size=416, camera=0):
+    def __init__(self, img_size=416, camera=0, max_fps=60):
         self.cam = cv2.VideoCapture(camera)
         self.height = img_size
+        if max_fps > 0:
+            self.cam.set(cv2.CAP_PROP_FPS, max_fps)
 
     def __iter__(self):
         self.count = -1
