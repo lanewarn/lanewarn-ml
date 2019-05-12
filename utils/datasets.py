@@ -10,8 +10,9 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 from tqdm import tqdm
-
+import freenect
 from utils.utils import xyxy2xywh
+from utils.video import bgr_to_rgb
 
 
 class LoadImages:  # for inference
@@ -91,6 +92,27 @@ class LoadImages:  # for inference
 
     def __len__(self):
         return self.nF  # number of files
+
+
+class LoadKinect:
+    def __init__(self, img_size=416, ind=0):
+        self.height = img_size
+        self.index = ind
+
+    def __iter__(self):
+        self.count = -1
+        return self
+
+    def __next__(self):
+        self.count += 1
+        # Read image
+        print('+ Grabbing image from Kinect')
+        vid = freenect.sync_get_video(self.index)
+        img0 = cv2.flip(vid, 1)
+
+
+    def __len__(self):
+        return 0
 
 
 class LoadWebcam:  # for inference
